@@ -12,3 +12,30 @@ db.campeonato.aggregate([{$group: {_id: "$jogo", maxPremiacao: {$max: "$premiaca
 
 // Retorna os times que participaram de campeonatos registrados no banco de dados
 db.campeonato.aggregate([{$lookup:{from: "times", localField: "times_participantes", foreignField: "nome", as: "time_camp"}}])
+
+// Retorna a primeira organização que tem time em 3 jogos
+db.times.findOne({$expr: {$eq: [ {$size: "$jogos"}, 3]}}); 
+
+
+db.times.aggregate([
+    {
+        $match: {
+            $text: {$search: "Gaming"}
+        }
+    },
+    {
+        $project:{
+            nome:1,
+            jogadoresFiltrados: {
+                $filter: {
+                    input: "$jogadores",
+                    as: "jogador",
+                    cond: {$eq: [
+                        "$$jogador.posicao", "Top Laner"
+                    ]
+                }
+            }
+        }
+    }
+}
+])
