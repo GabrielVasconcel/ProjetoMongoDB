@@ -39,3 +39,13 @@ db.times.aggregate([
     }
 }
 ])
+
+
+//Adicionando um novo elemento no array, garantindo que não há duplicatas
+db.equipas.updateOne(
+  { nome: "G2 Esports" },
+  { $addToSet: { jogadores: { nick: "Hans Sama", nacionalidade: "França", idade: 25, posicao: "Adc", jogo: "League of Legends" } } }
+)
+
+//Mudando o nome da coleção
+db.equipas.renameCollection("equipes")
