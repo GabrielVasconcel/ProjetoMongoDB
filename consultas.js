@@ -45,6 +45,7 @@ db.times.find({
     jogos:{$all: ["CS:GO", "Valorant"]}
 }).pretty()
 
+ 
 // Conta quantas competições com premiacao acima de 300 mil ocorreram no ano atual e nos passados
 db.campeonato.aggregate([
     {
@@ -63,5 +64,66 @@ db.campeonato.aggregate([
             },
             total: { $sum: 1 } 
         }
-    }
+}
 ])
+
+// Cria uma coleção para guardar a premiacao total para campeonato de CS:GO em andamento
+db.campeonato.mapReduce( function () 
+{if (this.status === "em andamento" && this.jogo === "CS:GO") 
+    { emit(this.jogo, this.premiacao);  } }, 
+    function (key, values) { return Array.sum(values);  }, 
+    { out: "premiacao_total",  query: { status: "em andamento", jogo: "CS:GO" }  } );
+
+// Tentativa de updade com upsert true
+db.campeonato.updateOne(
+    { nome: "Worlds 2022" },  
+    { 
+        $set: {
+            jogo: "League of Legends",
+            ano: 2022,
+            premiacao: 2225000,
+            times_participantes: [
+                { nome: "G2", regiao: "Europa" },
+                { nome: "Cloud9", regiao: "América do Norte" },
+                { nome: "Bilibili Gaming", regiao: "China" },
+                { nome: "SKT T1", regiao: "Coreia" }
+            ],
+            status: "concluído",
+            vencedor: "Cloud9"
+        }
+    },
+    { upsert: true }  
+);
+
+//atualizando o status do jogo
+db.campeonato.updateOne(
+    { nome: "Worlds 2024" }, 
+    { 
+        $set: {
+    status: "concluído",
+    vencedor: "G2"
+}
+}
+);
+
+//atualizando os status de todo os anos juntos
+db.campeonato.updateMany(
+    { ano: 2023 },  // Critério de busca
+    { 
+        $set: {
+            status: "encerrado"
+        }
+    }
+);
+
+// Campeonatos com premiacao maior que 300 mil
+db.campeonato.find({ $where: "this.premiacao > 300000" });
+
+//Mudando o nome da coleção
+db.equipas.renameCollection("equipes")// Organizações que têm times de CS:GO e Valorant
+
+//Adicionando um novo elemento no array, garantindo que não há duplicatas
+db.equipas.updateOne(
+    { nome: "G2 Esports" },
+    { $addToSet: { jogadores: { nick: "Hans Sama", nacionalidade: "França", idade: 25, posicao: "Adc", jogo: "League of Legends" } } }
+  )
