@@ -16,7 +16,7 @@ db.campeonato.aggregate([{$lookup:{from: "times", localField: "times_participant
 // Retorna a primeira organização que tem time em 3 jogos
 db.times.findOne({$expr: {$eq: [ {$size: "$jogos"}, 3]}}); 
 
-
+// Para times que tem Gaming no nome retorna o nome e os jogadores da posicao Top Laner
 db.times.aggregate([
     {
         $match: {
@@ -38,4 +38,30 @@ db.times.aggregate([
         }
     }
 }
+])
+
+// Organizações que têm times de CS:GO e Valorant
+db.times.find({
+    jogos:{$all: ["CS:GO", "Valorant"]}
+}).pretty()
+
+// Conta quantas competições com premiacao acima de 300 mil ocorreram no ano atual e nos passados
+db.campeonato.aggregate([
+    {
+        $match: {
+            premiacao: { $gt: 300000 } 
+        }
+    },
+    {
+        $group: {
+            _id: {
+                $cond: {
+                    if: { $lt: ["$ano", 2024] },
+                    then: "Antigo",
+                    else: "Atual"
+                }
+            },
+            total: { $sum: 1 } 
+        }
+    }
 ])
